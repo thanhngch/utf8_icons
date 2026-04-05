@@ -6,13 +6,13 @@
     <title>UTF-8 Icons</title>
     <script>
       (function() {
-        var t = localStorage.getItem('icon-viewer-theme') || 'dark';
+        var t = localStorage.getItem('icon-viewer-theme') || 'light';
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
     <style>
-      html { background: #0f0f1a; }
-      html[data-theme="light"] { background: #f5f5fa; }
+      html { background: #f5f5fa; }
+      html[data-theme="dark"] { background: #0f0f1a; }
     </style>
   </head>
   <body>

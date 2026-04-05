@@ -4,7 +4,7 @@
   box-sizing: border-box;
 }
 
-/* Dark theme (default) */
+/* Dark theme */
 :root {
   --bg-primary: #0f0f1a;
   --bg-secondary: #1a1a2e;

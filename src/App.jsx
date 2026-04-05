@@ -68,7 +68,7 @@ function Toast({ message, visible }) {
 
 function useTheme() {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('icon-viewer-theme') || 'dark'
+    return localStorage.getItem('icon-viewer-theme') || 'light'
   })
 
   useEffect(() => {
