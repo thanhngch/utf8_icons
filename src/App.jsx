@@ -109,6 +109,7 @@ function ThemeToggle({ theme, onToggle }) {
 function App() {
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [search, setSearch] = useState('')
+  const [isTagsExpanded, setIsTagsExpanded] = useState(false)
   const [toast, setToast] = useState({ message: '', visible: false })
   const toastTimeout = useRef(null)
   const { theme, toggleTheme } = useTheme()
@@ -129,22 +130,82 @@ function App() {
   }, [showToast])
 
   const blocksToShow = useMemo(() => {
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      return uniqueBlocks.filter(b => b.name.toLowerCase().includes(q))
+    const q = search.trim()
+    if (!q) {
+      if (selectedBlock !== null) {
+        return [uniqueBlocks[selectedBlock]]
+      }
+      return uniqueBlocks
     }
-    if (selectedBlock !== null) {
-      return [uniqueBlocks[selectedBlock]]
+
+    const lowerQ = q.toLowerCase()
+
+    // 1. Try to match blocks containing a character
+    if (q.length === 1 || (q.length === 2 && q.codePointAt(0) > 0xFFFF)) {
+      const code = q.codePointAt(0)
+      return uniqueBlocks.filter(b => code >= b.start && code <= b.end)
     }
-    return uniqueBlocks
+
+    // 2. Try to match blocks by name or hex code
+    return uniqueBlocks.filter(b => {
+      // 2a. Block name matches
+      if (b.name.toLowerCase().includes(lowerQ)) return true
+      
+      // 2b. Query looks like a hex code and falls within this block
+      const hexMatch = lowerQ.match(/^(?:u\+|0x)?([0-9a-f]{1,6})$/i)
+      if (hexMatch) {
+        const searchCode = parseInt(hexMatch[1], 16)
+        // If it's a full code match
+        if (searchCode >= b.start && searchCode <= b.end) return true
+        
+        // If it's a partial hex match (e.g. "219" matches blocks starting with 219)
+        const blockStartHex = b.start.toString(16).toLowerCase()
+        const blockEndHex = b.end.toString(16).toLowerCase()
+        if (blockStartHex.startsWith(hexMatch[1]) || blockEndHex.startsWith(hexMatch[1])) return true
+      }
+      
+      return false
+    })
   }, [selectedBlock, search])
 
   const blockIcons = useMemo(() => {
-    return blocksToShow.map(block => ({
-      block,
-      icons: generateIcons(block),
-    }))
-  }, [blocksToShow])
+    const q = search.trim()
+    if (!q) {
+      return blocksToShow.map(block => ({ block, icons: generateIcons(block) }))
+    }
+
+    const lowerQ = q.toLowerCase()
+    const hexMatch = lowerQ.match(/^(?:u\+|0x)?([0-9a-f]{1,6})$/i)
+    const searchHex = hexMatch ? hexMatch[1] : null
+    const searchCode = searchHex ? parseInt(searchHex, 16) : null
+    const charCode = (q.length === 1 || (q.length === 2 && q.codePointAt(0) > 0xFFFF)) ? q.codePointAt(0) : null
+
+    return blocksToShow.map(block => {
+      let icons = generateIcons(block)
+      
+      icons = icons.filter(icon => {
+        // Match if it's the character itself
+        if (charCode !== null && icon.code === charCode) return true
+        
+        // Match if block name matches (show all icons in that block)
+        if (block.name.toLowerCase().includes(lowerQ)) return true
+        
+        // Match if it's an exact hex match
+        if (searchCode !== null && icon.code === searchCode) return true
+        
+        // Match if it's a partial hex match
+        const iconHex = icon.code.toString(16).toLowerCase()
+        if (searchHex && iconHex.startsWith(searchHex)) return true
+        
+        return false
+      })
+
+      return {
+        block,
+        icons,
+      }
+    }).filter(b => b.icons.length > 0)
+  }, [blocksToShow, search])
 
   return (
     <div className="app">
@@ -155,30 +216,40 @@ function App() {
       </header>
 
       <div className="controls">
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Search blocks... (e.g. arrow, emoji, music)"
-          value={search}
-          onChange={e => { setSearch(e.target.value); setSelectedBlock(null) }}
-        />
+        <div className="search-container">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search blocks or code... (e.g. arrow, 1F600, u+2190)"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setSelectedBlock(null) }}
+          />
+        </div>
 
-        <div className="block-tags">
-          <button
-            className={`tag ${selectedBlock === null && !search ? 'active' : ''}`}
-            onClick={() => { setSelectedBlock(null); setSearch('') }}
-          >
-            All
-          </button>
-          {uniqueBlocks.map((block, i) => (
-            <button
-              key={i}
-              className={`tag ${selectedBlock === i ? 'active' : ''}`}
-              onClick={() => { setSelectedBlock(i); setSearch('') }}
-            >
-              {block.name}
+        <div className={`block-tags-container ${isTagsExpanded ? 'expanded' : ''}`}>
+          <div className="block-tags-header" onClick={() => setIsTagsExpanded(!isTagsExpanded)}>
+            <span>Select Category</span>
+            <button className="collapse-toggle">
+              {isTagsExpanded ? '−' : '+'}
             </button>
-          ))}
+          </div>
+          <div className="block-tags">
+            <button
+              className={`tag ${selectedBlock === null && !search ? 'active' : ''}`}
+              onClick={() => { setSelectedBlock(null); setSearch(''); setIsTagsExpanded(false) }}
+            >
+              All
+            </button>
+            {uniqueBlocks.map((block, i) => (
+              <button
+                key={i}
+                className={`tag ${selectedBlock === i ? 'active' : ''}`}
+                onClick={() => { setSelectedBlock(i); setSearch(''); setIsTagsExpanded(false) }}
+              >
+                {block.name}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

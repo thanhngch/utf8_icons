@@ -89,42 +89,79 @@
   background: var(--bg-primary);
   padding: 16px 0;
   border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-container {
+  width: 100%;
 }
 
 .search-input {
   width: 100%;
-  padding: 12px 18px;
+  padding: 14px 20px;
   border: 2px solid var(--input-border);
   border-radius: 12px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s;
-  margin-bottom: 12px;
+  transition: all 0.2s;
 }
 
 .search-input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--shadow-accent);
 }
 
 .search-input::placeholder {
   color: var(--text-muted);
 }
 
+.block-tags-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.block-tags-header {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.collapse-toggle {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .block-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  transition: max-height 0.3s ease-out, opacity 0.2s ease-out, margin 0.3s ease;
 }
 
 .tag {
-  padding: 6px 14px;
+  padding: 8px 16px;
   border: 1px solid var(--tag-border);
   border-radius: 20px;
   background: var(--tag-bg);
   color: var(--text-tag);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -133,6 +170,7 @@
 .tag:hover {
   border-color: var(--accent);
   color: var(--text-tag-hover);
+  background: var(--bg-secondary);
 }
 
 .tag.active {
@@ -140,9 +178,34 @@
   color: #fff;
   border-color: transparent;
   font-weight: 600;
+  box-shadow: 0 4px 12px var(--shadow-accent);
 }
 
-/* Block Section */
+/* Responsive */
+@media (max-width: 900px) {
+  .block-tags-header {
+    display: flex;
+  }
+
+  .block-tags {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 0;
+  }
+
+  .block-tags-container.expanded .block-tags {
+    max-height: 1000px; /* Increased to accommodate more tags */
+    opacity: 1;
+    margin-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .theme-toggle {
+    position: static;
+    margin-top: 12px;
+  }
+}
 .block-section {
   margin-bottom: 40px;
 }
