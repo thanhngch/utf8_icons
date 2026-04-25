@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import './App.css'
 
 // Common Unicode blocks containing icons/symbols
@@ -116,9 +116,10 @@ function ThemeToggle({ theme, onToggle }) {
   )
 }
 
-function AppContent() {
-  const { blockSlug } = useParams()
-  const navigate = useNavigate()
+function App() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const blockSlug = searchParams.get('g')
+
   const [search, setSearch] = useState('')
   const [isTagsExpanded, setIsTagsExpanded] = useState(false)
   const [toast, setToast] = useState({ message: '', visible: false })
@@ -146,11 +147,11 @@ function AppContent() {
     setSearch('')
     setIsTagsExpanded(false)
     if (index === null) {
-      navigate('/')
+      setSearchParams({})
     } else {
-      navigate(`/${blockNameToSlug(uniqueBlocks[index].name)}`)
+      setSearchParams({ g: blockNameToSlug(uniqueBlocks[index].name) })
     }
-  }, [navigate])
+  }, [setSearchParams])
 
   const blocksToShow = useMemo(() => {
     const q = search.trim()
@@ -245,7 +246,7 @@ function AppContent() {
             className="search-input"
             placeholder="Search blocks or code... (e.g. arrow, 1F600, u+2190)"
             value={search}
-            onChange={e => { setSearch(e.target.value); navigate('/') }}
+            onChange={e => { setSearch(e.target.value); setSearchParams({}) }}
           />
         </div>
 
@@ -315,15 +316,6 @@ function AppContent() {
 
       <Toast message={toast.message} visible={toast.visible} />
     </div>
-  )
-}
-
-function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<AppContent />} />
-      <Route path="/:blockSlug" element={<AppContent />} />
-    </Routes>
   )
 }
 
