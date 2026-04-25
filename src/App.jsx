@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom'
 import './App.css'
 
 // Common Unicode blocks containing icons/symbols
@@ -42,6 +43,15 @@ const uniqueBlocks = UNICODE_BLOCKS.reduce((acc, block) => {
 }, [])
 
 const COLS = 20
+
+function blockNameToSlug(name) {
+  return name.replace(/\s+/g, '_')
+}
+
+function slugToBlockIndex(slug) {
+  if (!slug) return null
+  return uniqueBlocks.findIndex(b => blockNameToSlug(b.name) === slug)
+}
 
 function generateIcons(block) {
   const icons = []
@@ -106,13 +116,16 @@ function ThemeToggle({ theme, onToggle }) {
   )
 }
 
-function App() {
-  const [selectedBlock, setSelectedBlock] = useState(null)
+function AppContent() {
+  const { blockSlug } = useParams()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [isTagsExpanded, setIsTagsExpanded] = useState(false)
   const [toast, setToast] = useState({ message: '', visible: false })
   const toastTimeout = useRef(null)
   const { theme, toggleTheme } = useTheme()
+
+  const selectedBlock = useMemo(() => slugToBlockIndex(blockSlug), [blockSlug])
 
   const showToast = useCallback((msg) => {
     setToast({ message: msg, visible: true })
@@ -129,10 +142,20 @@ function App() {
     }).catch(() => {})
   }, [showToast])
 
+  const handleSelectBlock = useCallback((index) => {
+    setSearch('')
+    setIsTagsExpanded(false)
+    if (index === null) {
+      navigate('/')
+    } else {
+      navigate(`/${blockNameToSlug(uniqueBlocks[index].name)}`)
+    }
+  }, [navigate])
+
   const blocksToShow = useMemo(() => {
     const q = search.trim()
     if (!q) {
-      if (selectedBlock !== null) {
+      if (selectedBlock !== null && selectedBlock !== -1) {
         return [uniqueBlocks[selectedBlock]]
       }
       return uniqueBlocks
@@ -222,7 +245,7 @@ function App() {
             className="search-input"
             placeholder="Search blocks or code... (e.g. arrow, 1F600, u+2190)"
             value={search}
-            onChange={e => { setSearch(e.target.value); setSelectedBlock(null) }}
+            onChange={e => { setSearch(e.target.value); navigate('/') }}
           />
         </div>
 
@@ -235,8 +258,8 @@ function App() {
           </div>
           <div className="block-tags">
             <button
-              className={`tag ${selectedBlock === null && !search ? 'active' : ''}`}
-              onClick={() => { setSelectedBlock(null); setSearch(''); setIsTagsExpanded(false) }}
+              className={`tag ${selectedBlock === null || selectedBlock === -1 ? 'active' : ''}`}
+              onClick={() => handleSelectBlock(null)}
             >
               All
             </button>
@@ -244,7 +267,7 @@ function App() {
               <button
                 key={i}
                 className={`tag ${selectedBlock === i ? 'active' : ''}`}
-                onClick={() => { setSelectedBlock(i); setSearch(''); setIsTagsExpanded(false) }}
+                onClick={() => handleSelectBlock(i)}
               >
                 {block.name}
               </button>
@@ -292,6 +315,15 @@ function App() {
 
       <Toast message={toast.message} visible={toast.visible} />
     </div>
+  )
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<AppContent />} />
+      <Route path="/:blockSlug" element={<AppContent />} />
+    </Routes>
   )
 }
 
